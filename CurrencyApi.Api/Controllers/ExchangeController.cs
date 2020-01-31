@@ -1,21 +1,21 @@
 ﻿using System.Linq;
 using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace currency_api
 {
-  [ApiController]
   [Route("[controller]/[action]")]
-  public class ExchangeController : Controller
+  public class ExchangeController : ControllerBase
   {
     private readonly ILogger<ExchangeController> _logger;
-    private readonly CurrencyManager _currencyManager;
+    private readonly ICurrencyManager _currencyManager;
 
     public ExchangeController(
       ILogger<ExchangeController> logger,
-      CurrencyManager currencyManager
+      ICurrencyManager currencyManager
       )
     {
       _logger = logger;
@@ -23,26 +23,34 @@ namespace currency_api
     }
 
     [HttpGet]
-    public IEnumerable<CurrencyInfo> Get()
+    public async Task<IActionResult> Get()
     {
       Console.WriteLine("Requested all data");
-      return GetFilteredDataSet();
+      var data = await GetFilteredDataSet();
+      return Ok(data);
     }
 
     [HttpGet(ExchangeRoutes.DATA_POINT_GET)]
     [HttpGet(ExchangeRoutes.DATA_POINT_ONE_CURRENCY_GET)]
-    public CurrencyInfo GetDataPoint(
-      DateTime date,
+    public async Task<IActionResult> GetDataPoint(
+      DateTime datePoint,
       string currency = null
       )
     {
-      Console.WriteLine("Requested data on {0}", date);
-      return GetFilteredDataSet().FirstOrDefault(c => c.Date == date);
+      Console.WriteLine("Requested data on {0:yyyy-MM-dd}", datePoint);
+      var data = await GetFilteredDataSet();
+      var point = data.FirstOrDefault(c => c.Date == datePoint);
+      if (point == null)
+      {
+        point = await _currencyManager.FetchPoint(datePoint, currency);
+      }
+
+      return Ok(point);
     }
 
     [HttpGet(ExchangeRoutes.DATA_RANGE_GET)]
     [HttpGet(ExchangeRoutes.DATA_RANGE_ONE_CURRENCY_GET)]
-    public IEnumerable<CurrencyInfo> GetDataRange(
+    public async Task<IActionResult> GetDataRange(
       DateTime startDate,
       DateTime endDate,
       string currency
@@ -50,29 +58,36 @@ namespace currency_api
     {
       Console.WriteLine("Requested data from {0} to {1} ", startDate, endDate);
 
-      return GetFilteredDataSet(currency)
-      .Where(c =>
+      var data = await GetFilteredDataSet(currency);
+      data = data.Where(c =>
         c.Date >= startDate
         && c.Date <= endDate
       );
 
+      return Ok(data);
+
     }
 
     [HttpGet(ExchangeRoutes.DATA_RANGE_ONE_CURRENCY_AVG_GET)]
-    public decimal GetDataRangeAverageRate(
+    public async Task<IActionResult> GetDataRangeAverageRate(
       DateTime startDate,
       DateTime endDate,
       string currency = null
       )
     {
-      var data = GetDataRange(startDate, endDate, currency);
-      Console.WriteLine("Requested average");
-      return data.Average(c => c.Rate);
+      Console.WriteLine("Requested average rate of data from {0} to {1}", startDate, endDate);
+
+      var data = await GetFilteredDataSet(currency);
+      data = data.Where(c =>
+        c.Date >= startDate
+        && c.Date <= endDate
+      );
+      return Ok(data.Average(c => c.Rate));
     }
 
-    private IEnumerable<CurrencyInfo> GetFilteredDataSet(string currency = null)
+    private async Task<IEnumerable<CurrencyInfo>> GetFilteredDataSet(string currency = null)
     {
-      var data = _currencyManager.Data;
+      var data = await _currencyManager.GetData();
 
       if (!string.IsNullOrEmpty(currency))
       {

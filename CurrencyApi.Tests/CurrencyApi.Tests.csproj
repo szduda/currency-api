@@ -9,4 +9,9 @@
     <PackageReference Include="xunit" Version="2.4.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\CurrencyApi.Worker\CurrencyApi.Worker.csproj" />
+    <ProjectReference Include="..\CurrencyApi.Api\currency-api.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -19,7 +19,8 @@ namespace currency_api
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddControllers();
-      services.AddSingleton<CurrencyManager>();
+      services.AddSingleton<ICurrencyManager, CurrencyManager>();
+      services.AddSingleton<CurrencyProvider>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

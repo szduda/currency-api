@@ -3,7 +3,7 @@ namespace currency_api
   public static class ExchangeRoutes
   {
     public const string DATA_POINT_GET =
-    "/exchange/{date:DateTime}";
+    "/exchange/{datePoint:DateTime}";
     public const string DATA_RANGE_GET =
     "/exchange/{startDate:DateTime}/{endDate:DateTime}";
 

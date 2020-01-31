@@ -9,8 +9,25 @@ namespace currency_api
 {
   public class CurrencyProvider
   {
-    private const string GetCurrencyUri =
-            "http://api.nbp.pl/api/exchangerates/rates/a/usd/";
+
+    private const string requestTemplateBase =
+    "http://api.nbp.pl/api/exchangerates/rates/a/";
+    private string GetCurrencyUri(DateTime date, string currency)
+    {
+      var uri = requestTemplateBase;
+      if (!string.IsNullOrEmpty(currency))
+      {
+        uri += currency + "/";
+      }
+
+      var dateParam = date != DateTime.MinValue
+      ? date.ToString("yyyy-MM-dd")
+      : "today";
+      uri += dateParam;
+
+      Console.WriteLine(uri);
+      return uri;
+    }
     private readonly HttpClient _httpClient;
 
     public CurrencyProvider()
@@ -22,9 +39,21 @@ namespace currency_api
 
     public async Task FetchCurrency(CancellationToken cancellationToken)
     {
+      await FetchCurrency(DateTime.MinValue, null, cancellationToken);
+    }
+
+    public async Task FetchCurrency(
+      DateTime date,
+      string currency,
+      CancellationToken cancellationToken
+      )
+    {
       try
       {
-        var response = await _httpClient.GetAsync(GetCurrencyUri, cancellationToken);
+        var response = await _httpClient.GetAsync(
+          GetCurrencyUri(date, currency),
+          cancellationToken
+          );
 
         if (response.IsSuccessStatusCode)
         {
@@ -32,7 +61,6 @@ namespace currency_api
           var payload = JsonConvert
           .DeserializeObject<CurrencyPayload>(responseString);
           var rate = payload.Rates?.FirstOrDefault();
-          DateTime.TryParse(rate?.EffectiveDate, out var date);
           Currency = new CurrencyInfo
           {
             Code = payload.Code,
