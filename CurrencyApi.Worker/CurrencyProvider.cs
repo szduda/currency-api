@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using System.Net;
 
 namespace currency_api
 {
@@ -36,6 +37,7 @@ namespace currency_api
     }
 
     public CurrencyInfo Currency { get; private set; } = null;
+    public string Error { get; private set; }
 
     public async Task FetchCurrency(CancellationToken cancellationToken)
     {
@@ -48,6 +50,8 @@ namespace currency_api
       CancellationToken cancellationToken
       )
     {
+      Currency = null;
+      Error = null;
       try
       {
         var response = await _httpClient.GetAsync(
@@ -67,8 +71,15 @@ namespace currency_api
             Date = date,
             Rate = rate?.Mid ?? 0M
           };
+          Console.WriteLine(Currency.Date);
+          SaveCurrency();
         }
-        SaveCurrency();
+        else
+        {
+          Error = response.StatusCode == HttpStatusCode.NotFound
+          ? "Requested data not found"
+          : "An error occured during data fetch from external service";
+        }
       }
       catch (Exception ex)
       {

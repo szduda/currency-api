@@ -13,6 +13,8 @@ namespace currency_api
     private IEnumerable<CurrencyInfo> _data = Enumerable.Empty<CurrencyInfo>();
     private readonly CurrencyProvider _currencyProvider;
 
+    public string Error { get; private set; }
+
     public CurrencyManager(CurrencyProvider currencyProvider)
     {
       _currencyProvider = currencyProvider;
@@ -52,7 +54,13 @@ namespace currency_api
     {
       var token = new CancellationToken(false);
       await _currencyProvider.FetchCurrency(date, currency, token);
+      if (!string.IsNullOrEmpty(_currencyProvider.Error))
+      {
+        Error = _currencyProvider.Error;
+      }
+
       // todo: save to db
+
       return _currencyProvider.Currency;
     }
   }

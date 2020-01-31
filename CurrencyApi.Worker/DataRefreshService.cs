@@ -23,7 +23,6 @@ namespace currency_api
     {
       while (!cancellationToken.IsCancellationRequested)
       {
-        _logger.LogInformation("Data: {0}", _currencyProvider.Currency?.Rate);
         await _currencyProvider.FetchCurrency(cancellationToken);
         await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
       }

@@ -43,6 +43,8 @@ namespace currency_api
       if (point == null)
       {
         point = await _currencyManager.FetchPoint(datePoint, currency);
+        if (point == null)
+          return NotFound(_currencyManager.Error);
       }
 
       return Ok(point);
@@ -78,11 +80,12 @@ namespace currency_api
       Console.WriteLine("Requested average rate of data from {0} to {1}", startDate, endDate);
 
       var data = await GetFilteredDataSet(currency);
-      data = data.Where(c =>
+      var avg = data.Where(c =>
         c.Date >= startDate
-        && c.Date <= endDate
-      );
-      return Ok(data.Average(c => c.Rate));
+        && c.Date <= endDate)
+        .Average(c => c.Rate);
+
+      return Ok(avg);
     }
 
     private async Task<IEnumerable<CurrencyInfo>> GetFilteredDataSet(string currency = null)
